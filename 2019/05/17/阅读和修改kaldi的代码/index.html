@@ -1,0 +1,195 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.8.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>阅读和修改kaldi的代码 | 追风的猪</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/normalize/8.0.1/normalize.min.css"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//lib.baomitu.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//lib.baomitu.com/jquery/3.4.0/jquery.min.js"></script><link rel="icon" mask sizes="any" href="/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">阅读和修改kaldi的代码</h1><a id="logo" href="/.">追风的猪</a><p class="description"></p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/category/"><i class="fa fa-folder"> 分类</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">阅读和修改kaldi的代码</h1><div class="post-meta">May 17, 2019<span> | </span><span class="category"><a href="/categories/kaldi/">kaldi</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span></div><a class="disqus-comment-count" href="/2019/05/17/阅读和修改kaldi的代码/#vcomment"><span class="valine-comment-count" data-xid="/2019/05/17/阅读和修改kaldi的代码/"></span><span> 条评论</span></a><div class="post-content"><p>本节主要涉及kaldi的代码组织，依赖的结构，以及修改代码，调试代码。</p>
+<h2 id="通用基础类库"><a href="#通用基础类库" class="headerlink" title="通用基础类库"></a>通用基础类库</h2><p>src目录下的base和util是kaldi里面最基础的两个目录，几乎每一个kaldi的程序都依赖于这两个目录，查看base/kaldi-common.h, kaldi-common.h这个头文件中包含了base这个目录下的除了io-funcs-inl.h下的其他所有的头文件以及系统库，其中io-funcs-inl.h则被io-funcs.h包含，而io-funcs.h这包含在kaldi-common.h，可以说kaldi-common.h中包含了所有的头文件。我们可以通过头文件名知道对应的功能，比如日志记录，类型定义，数学库等。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//kaldi-common.h</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> KALDI_BASE_KALDI_COMMON_H_</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> KALDI_BASE_KALDI_COMMON_H_ 1</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstddef&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdlib&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;  // C string stuff like strcpy</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sstream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdexcept&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cassert&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fstream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"base/kaldi-utils.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"base/kaldi-error.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"base/kaldi-types.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"base/io-funcs.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"base/kaldi-math.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"base/timer.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span>  <span class="comment">// KALDI_BASE_KALDI_COMMON_H_</span></span></span><br></pre></td></tr></table></figure></p>
+<p>util目录是另一个基础的目录，在util/common-utils.h中包含更多的头文件，包括前面的base下的kaldi-common.h，util目录下主要包括命令行的解析，I/O的处理，文件的读写。<br>之所以将基础类库的一部分分离到base中去，主要是为了最小化matrix的依赖，而且base目录本身就很有用，或者说被其他目录依赖。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#common-utils.sh</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> KALDI_UTIL_COMMON_UTILS_H_</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> KALDI_UTIL_COMMON_UTILS_H_</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"base/kaldi-common.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"util/parse-options.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"util/kaldi-io.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"util/simple-io-funcs.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"util/kaldi-holder.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"util/kaldi-table.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"util/table-types.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"util/text-utils.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span>  <span class="comment">// KALDI_UTIL_COMMON_UTILS_H_</span></span></span><br></pre></td></tr></table></figure>
+<p>最后一个比较基础的类库，则是matrix, kaldi中的matrxi是在BLAS和LPACK库上的进一步封装，或者说是包装器（wrapper）.查看src下的matrix/matrix-lib.h 可以看到matrix-lib.h这个头文件中主要是包含其他的头文件依赖，提供了矩阵库中各种内容的概述, 从文件名可以知道其对应的功能，包括向量，矩阵，对阵矩阵，三角阵，fft变换，压缩矩阵，稀疏矩阵，以及涉及到矩阵的相关操作函数。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//matrix-lib.h</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> KALDI_MATRIX_MATRIX_LIB_H_</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> KALDI_MATRIX_MATRIX_LIB_H_</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"base/kaldi-common.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/kaldi-vector.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/kaldi-matrix.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/sp-matrix.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/tp-matrix.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/matrix-functions.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/srfft.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/compressed-matrix.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/sparse-matrix.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"matrix/optimization.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br></pre></td></tr></table></figure></p>
+<p>sp-matrix.h和tp-matrix.h分别与对阵矩阵和三角阵相关，kaldi-matrix.h中对MatrixBase进行定义。<br>上述了的base, util, matrix目录可以说是kaldi的所有程序中最基础的，或者说大部分程序都依赖于这三个目录中的代码。</p>
+<h2 id="修改和调试代码"><a href="#修改和调试代码" class="headerlink" title="修改和调试代码"></a>修改和调试代码</h2><p>这里以修改matrix下的代码为例，在matrix-lib-test.cc中添加一个测试函数，这是一个测试程序。这个测试函数给一个向量加上一个常数与向量的乘积。<br>在MatrixUnitTests函数上面添加UnitTestAddVec<real>函数，UnitTestAddVec<real>函数，是我们将要添加的函数。如下<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="class"><span class="keyword">class</span> <span class="title">Real</span>&gt;</span></span><br><span class="line"><span class="class"><span class="title">void</span> <span class="title">UnitTestAddVec</span>() &#123;</span></span><br><span class="line">  <span class="comment">// note: Real will be float or double when instantiated.</span></span><br><span class="line">  int32 dim = <span class="number">1</span> + Rand() % <span class="number">10</span>;</span><br><span class="line">  Vector&lt;Real&gt; v(dim), w(dim); <span class="comment">// two vectors the same size.</span></span><br><span class="line">  v.SetRandn();</span><br><span class="line">  w.SetRandn();</span><br><span class="line">  Vector&lt;Real&gt; w2(w); <span class="comment">// w2 is a copy of w.</span></span><br><span class="line">  Real f = RandGauss();</span><br><span class="line">  w.AddVec(f, v); <span class="comment">// w &lt;-- w + f v</span></span><br><span class="line">  <span class="keyword">for</span> (int32 i = <span class="number">0</span>; i &lt; dim; i++) &#123;</span><br><span class="line">    Real a = w(i), b = f * w2(i) + v(i);</span><br><span class="line">    AssertEqual(a, b); <span class="comment">// will crash if not equal to within</span></span><br><span class="line">    <span class="comment">// a tolerance.</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></real></real></p>
+<p>执行make test 生成测试程序matrxi-lib-test并测试,这一步会提示错误。查看matrix-lib-test.testlog可以看到具体的错误。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">ASSERTION_FAILED ([5.5.333~1-e9223]:AssertEqual():base/kaldi-math.h:278) Assertion failed: (ApproxEqual(a, b, relative_tolerance))</span><br><span class="line"></span><br><span class="line">[ Stack-Trace: ]</span><br><span class="line">kaldi::MessageLogger::LogMessage() const</span><br><span class="line">kaldi::KaldiAssertFailure_(char const*, char const*, int, char const*)</span><br><span class="line">void kaldi::UnitTestAddVec&lt;float&gt;()</span><br><span class="line">./matrix-lib-test() [0x451d5a]</span><br><span class="line">main</span><br><span class="line">__libc_start_main</span><br><span class="line">_start</span><br></pre></td></tr></table></figure></p>
+<p>直接执行./matrix-lib-test也会报错，因为v和w是随机生成的，肯定不会相等。<br>现在执行gdb调试，这里补充一下gdb调试的知识。<br>(1) 启动调试<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gdb program    //program指自己的程序</span><br></pre></td></tr></table></figure></p>
+<p>(2) gdb的命令列表</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>命令缩写</th>
+<th>命令说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>list</td>
+<td>l</td>
+<td>显示多行源代码</td>
+</tr>
+<tr>
+<td>break</td>
+<td>b</td>
+<td>设置断点，比如b 10, 在第10行设置断点</td>
+</tr>
+<tr>
+<td>info</td>
+<td></td>
+<td>查看某个值，比如info break</td>
+</tr>
+<tr>
+<td>delete</td>
+<td></td>
+<td>删除某个值，比如delete breakpoint, 删除某个断点</td>
+</tr>
+<tr>
+<td>disable</td>
+<td></td>
+<td>disable breakpoint,禁用某个断点</td>
+</tr>
+<tr>
+<td>run</td>
+<td>r</td>
+<td>运行程序</td>
+</tr>
+<tr>
+<td>display</td>
+<td>disp</td>
+<td>追踪查看某个变量</td>
+</tr>
+<tr>
+<td>step</td>
+<td>s</td>
+<td>执行下一条语句,，如果该语句为函数调用,则进入函数执行其中的第一条语句</td>
+</tr>
+<tr>
+<td>next</td>
+<td>n</td>
+<td>执行下一条语句,如果该语句为函数调用,不会进入函数内部执行(即不会一步步地调试函数内部语句)</td>
+</tr>
+<tr>
+<td>finish</td>
+<td></td>
+<td>如果已经进入了某函数，而想退出该函数返回到它的调用函数中，可使用命令finish</td>
+</tr>
+<tr>
+<td>print</td>
+<td>p</td>
+<td>打印内部变量值</td>
+</tr>
+<tr>
+<td>continue</td>
+<td>c</td>
+<td>继续程序的运行,直到遇到下一个断点</td>
+</tr>
+<tr>
+<td>watch</td>
+<td></td>
+<td>监视某个变量值得变化</td>
+</tr>
+<tr>
+<td>backtrace</td>
+<td>bt</td>
+<td>查看函数调用的堆栈信息</td>
+</tr>
+<tr>
+<td>up</td>
+<td></td>
+<td>上移栈帧</td>
+</tr>
+<tr>
+<td>quit</td>
+<td>q</td>
+<td>退出gdb</td>
+</tr>
+<tr>
+<td>whatis</td>
+<td></td>
+<td>查看变量类型</td>
+</tr>
+</tbody>
+</table>
+<p>调试matrix-lib-test程序，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gdb ./matrix-lib-test</span><br></pre></td></tr></table></figure></p>
+<p>输入r运行程序<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">(gdb) r</span><br><span class="line">Starting program: /home/cca01/hdd190404/luoxj/kaldi/src/matrix/matrix-lib-test </span><br><span class="line">[Thread debugging using libthread_db enabled]</span><br><span class="line">Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".</span><br><span class="line">ASSERTION_FAILED ([5.5.333~1-e9223]:AssertEqual():base/kaldi-math.h:278) Assertion failed: (ApproxEqual(a, b, relative_tolerance))</span><br><span class="line"></span><br><span class="line">[ Stack-Trace: ]</span><br><span class="line">kaldi::MessageLogger::LogMessage() const</span><br><span class="line">kaldi::KaldiAssertFailure_(char const*, char const*, int, char const*)</span><br><span class="line">void kaldi::UnitTestAddVec&lt;float&gt;()</span><br><span class="line">/home/cca01/hdd190404/luoxj/kaldi/src/matrix/matrix-lib-test() [0x451d5a]</span><br><span class="line">main</span><br><span class="line">__libc_start_main</span><br><span class="line">_start</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Program received signal SIGABRT, Aborted.</span><br><span class="line">0x00007ffff61a9428 in __GI_raise (sig=sig@entry=6) at ../sysdeps/unix/sysv/linux/raise.c:54</span><br><span class="line">54	../sysdeps/unix/sysv/linux/raise.c: No such file or directory.</span><br></pre></td></tr></table></figure></p>
+<p>输入bt查看堆栈信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">(gdb) bt</span><br><span class="line">#0  0x00007ffff61a9428 in __GI_raise (sig=sig@entry=6) at ../sysdeps/unix/sysv/linux/raise.c:54</span><br><span class="line">#1  0x00007ffff61ab02a in __GI_abort () at abort.c:89</span><br><span class="line">#2  0x00007ffff7933a4c in kaldi::KaldiAssertFailure_ (</span><br><span class="line">    func=func@entry=0x462e58 &lt;kaldi::AssertEqual(float, float, float)::__func__&gt; &quot;AssertEqual&quot;, </span><br><span class="line">    file=file@entry=0x4603bb &quot;../base/kaldi-math.h&quot;, line=line@entry=278, </span><br><span class="line">    cond_str=cond_str@entry=0x460f28 &quot;ApproxEqual(a, b, relative_tolerance)&quot;) at kaldi-error.cc:209</span><br><span class="line">#3  0x000000000045c5d4 in kaldi::AssertEqual (relative_tolerance=0.00100000005, b=&lt;optimized out&gt;, a=&lt;optimized out&gt;)</span><br><span class="line">    at ../base/kaldi-math.h:278</span><br><span class="line">#4  kaldi::UnitTestAddVec&lt;float&gt; () at matrix-lib-test.cc:4602</span><br><span class="line">#5  0x0000000000451d5a in kaldi::MatrixUnitTest&lt;float&gt; (full_test=full_test@entry=false) at matrix-lib-test.cc:4608</span><br><span class="line">#6  0x000000000045c11d in main () at matrix-lib-test.cc:4766</span><br></pre></td></tr></table></figure></p>
+<p>输入up，将栈帧一层一层往上移，直到到达上述函数的内部<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) up</span><br><span class="line">#3  0x000000000045c5d4 in kaldi::AssertEqual (relative_tolerance=0.00100000005, b=&lt;optimized out&gt;, a=&lt;optimized out&gt;)</span><br><span class="line">    at ../base/kaldi-math.h:278</span><br><span class="line">278	  KALDI_ASSERT(ApproxEqual(a, b, relative_tolerance));</span><br></pre></td></tr></table></figure></p>
+<p>使用p打印变量的值<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p a</span><br><span class="line">$1 = &lt;optimized out&gt;</span><br><span class="line">(gdb) p b</span><br><span class="line">$2 = &lt;optimized out&gt;</span><br></pre></td></tr></table></figure></p>
+<p>这里并没有打印出a和b的值，原因是编译是kaldi.mk使用的是g++ -O1的优化选项，同时由于使用-O1选项导致断点无效。<br><img src="/2019/05/17/阅读和修改kaldi的代码/kaldi_mk_cxxflag.png"><br>修改编译选项为-O0，重新执行上述步骤，即可打印出对应的值。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p a</span><br><span class="line">$1 = -1.39748704</span><br><span class="line">(gdb) p b</span><br><span class="line">$2 = -0.473557711</span><br><span class="line">(gdb) q</span><br></pre></td></tr></table></figure></p>
+<h2 id="kaldi的编码风格"><a href="#kaldi的编码风格" class="headerlink" title="kaldi的编码风格"></a>kaldi的编码风格</h2><p>1、 kaldi中类的私有变量以下划线结尾<br>2、kaldi的两种文件格式：scp(script) 和 ark(archive)。 .scp文件是key到文件或者管道的映射，.ark文件是数据文件，由key和value组成。kaldi的工具需要指明输入输出的文件类型，告诉kaldi怎么去读这些文件。格式如下：</p>
+<table>
+<thead>
+<tr>
+<th>wspecifier</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ark:foo.ark</td>
+<td>Write to archive “foo.ark”</td>
+</tr>
+<tr>
+<td>scp:foo.scp</td>
+<td>Write to files using mapping in fdo.scp</td>
+</tr>
+<tr>
+<td>ark:-</td>
+<td>Write archive to stdout</td>
+</tr>
+<tr>
+<td>ark,t: &#124; gzip -c &gt; foo.gz</td>
+<td>Write text-form archive to foo.gz</td>
+</tr>
+<tr>
+<td>ark,t:-</td>
+<td>Write text-form archive to stdout</td>
+</tr>
+<tr>
+<td>ark,scp:foo.ark,foo.scp</td>
+<td>Write archive and scp file, scp file specifying offsets into that archive, like an index</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>rspecifier</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ark:foo.ark</td>
+<td>Read from archive foo.ark</td>
+</tr>
+<tr>
+<td>scp:foo.scp</td>
+<td>Read as specified in foo.scp</td>
+</tr>
+<tr>
+<td>ark:-</td>
+<td>Read archive from  stdin</td>
+</tr>
+<tr>
+<td>ark:gunzip -c foo.gz &#124;</td>
+<td>Read archive from foo.gz</td>
+</tr>
+<tr>
+<td>ark,s,cs:-</td>
+<td>Read archive(sorted) from stdin, ‘s’ asserts archive is sorted. ‘s’ asserts it will be called in sorted order</td>
+</tr>
+</tbody>
+</table>
+</div><div><ul class="post-copyright"><li class="post-copyright-author"><strong>本文作者：</strong>追风的猪</li><li class="post-copyright-link"><strong>本文链接：</strong><a href="/2019/05/17/阅读和修改kaldi的代码/">http://yoursite.com/2019/05/17/阅读和修改kaldi的代码/</a></li><li class="post-copyright-license"><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</li></ul></div><br><div class="tags"><a href="/tags/kaldi-debug-编码风格/">kaldi debug 编码风格</a></div><div class="post-nav"><a class="next" href="/2019/05/09/hello-world/">Hello World</a></div><div id="vcomment"></div><script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="//unpkg.com/valine@latest/dist/Valine.min.js"></script><script>var notify = 'false' == true ? true : false;
+var verify = 'false' == true ? true : false;
+var GUEST_INFO = ['nick','mail','link'];
+var guest_info = 'nick,mail,link'.split(',').filter(function(item){
+  return GUEST_INFO.indexOf(item) > -1
+});
+guest_info = guest_info.length == 0 ? GUEST_INFO :guest_info;
+window.valine = new Valine({
+  el:'#vcomment',
+  notify:notify,
+  verify:verify,
+  appId:'EpW4PIfxM4lnev23BejpJKx7-gzGzoHsz',
+  appKey:'2rvFbqd5gcnWYpcGVjVvNRcn',
+  placeholder:'Just so so',
+  avatar:'mm',
+  guest_info:guest_info,
+  pageSize:'10'
+})</script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"><input type="hidden" name="sitesearch" value="http://yoursite.com"></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/kaldi/">kaldi</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/kaldi-debug-编码风格/" style="font-size: 15px;">kaldi debug 编码风格</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2019/05/17/阅读和修改kaldi的代码/">阅读和修改kaldi的代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/09/hello-world/">Hello World</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2019 <a href="/." rel="nofollow">追风的猪.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
